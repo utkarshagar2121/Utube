@@ -18,7 +18,7 @@ const registerUser = asyncHandler(async (req, res) => {
   // Login User
 
   const { fullname, email, username, password } = req.body;
-  console.log("req body", req.body);
+  // console.log("req body", req.body);
 
   //To do the validation
   // if(fullname && fullname==""){
@@ -42,26 +42,59 @@ const registerUser = asyncHandler(async (req, res) => {
 
   // Check if the user already exists using email and username
   // We need to check if the Username or the Email exist so we check for that or  condition using operators $
-  const existedUser = User.findOne({
+  const existedUser = await User.findOne({
     $or: [{ email }, { username }],
   });
   //check for exited user
   if (existedUser) {
+    // console.log("there is an existed user in the database");
+    // console.log("existedUser", existedUser);
     throw new ApiError(409, "User with email or username already existed");
   }
 
+  //Pssword Validation
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
+  if (!passwordRegex.test(password)) {
+    throw new ApiError(
+      400,
+      "Password must contain at least 1 uppercase letter, 1 lowercase letter, 1 digit, and 1 special character"
+    );
+  }
+
+  // console.log(password.length);
+
   //Handling files
   // files access given by multer middleware
+
+  // console.log("req.files", req.files);
   const avatarlocalpath = req.files?.avatar[0]?.path;
-  const coverfilepath = req.files?.cover[0]?.path;
+  // const coverfilepath = req.files?.coverImage[0]?.path;
+
+  let coverimagelocalpath;
+  if (
+    req.files &&
+    Array.isArray(req.files.coverImage) &&
+    req.files.coverImage.length > 0
+  ) {
+    coverimagelocalpath = req.files.coverImage[0].path;
+  }
 
   if (!avatarlocalpath) {
     throw new ApiError(400, "Avatar is required");
   }
 
+  // console.log("avatarlocalpath", avatarlocalpath);
+  // console.log("coverfilepath", coverfilepath);
+
   //upload them to clodinary
   const avatar = await uploadOnCloudinary(avatarlocalpath);
-  const cover = await uploadOnCloudinary(coverfilepath);
+  let cover;
+  if (coverimagelocalpath) {
+    cover = await uploadOnCloudinary(coverimagelocalpath);
+  }
+
+  // console.log("avatar", avatar);
+  // console.log("cover", cover);
 
   if (!avatar) {
     throw new ApiError(

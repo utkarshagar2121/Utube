@@ -4,8 +4,11 @@ import dotenv from "dotenv";
 import connectionDB from "./db/index.js";
 import app from "./app.js";
 
-dotenv.config();
+dotenv.config({
+  path: "./.env",
+});
 
+// console.log(process.env.MONGO_URL);
 connectionDB()
   .then(() => {
     app.listen(process.env.PORT || 8000, () => {
